@@ -2,12 +2,18 @@
 
 use strict;
 
-#use constant TRUE  => 1;
-#use constant FALSE => 0;
-
-# Gtk stuff
+use utf8;
 use Glib qw/TRUE FALSE/;
 use Gtk2;
+use Net::HTTP;
+
+my $DREAM_BOX_IP="192.168.1.8";
+
+my $VLC_BIN="/usr/bin/vlc";
+my $VLC_ARGS="--verbose 0";
+
+my $window;
+my $vbox;
 
 sub gtk2_delete_event
 {
@@ -18,9 +24,92 @@ sub gtk2_destroy
 	Gtk2->main_quit;
 }
 
-sub senderliste
+sub switch_channel
 {
-	print "Senderliste\n";
+	my (%h, @rest) = @_;
+	print %h ."\n";
+}
+
+sub channel_list
+{
+	# /body
+	#print "senderliste\n";
+	my $s = Net::HTTP->new(Host => $DREAM_BOX_IP) || die $@;
+	$s->write_request(GET => "/body");
+	my $l="";
+	while (1) {
+		my $buf;
+		my $n = $s->read_entity_body($buf, 1024);
+		die "read failed: $!" unless defined $n;
+		last unless $n;
+		$l .= $buf;
+	}
+
+	my $chan_array;
+	my @chan;
+	my $chan_ref_array;
+	my @chan_ref;
+
+	($chan_array) = ( $l =~ m{channels\[0\] = new Array\((.*)\);}g );
+	($chan_ref_array) = ( $l =~ m{channelRefs\[0\] = new Array\((.*)\);}g );
+
+	@chan = ( $chan_array =~ m{"\([0-9]{2}\.[0-9][EW]\) ([^"]*)"}g );
+	@chan_ref = ( $chan_ref_array =~ m{"([^"]*)"}g );
+
+#	print "@chan\n";
+#	print "@chan_ref\n";
+
+	# remove "old" buttons
+	my @vbutt = $vbox->get_children;
+	my $skip=1;
+	foreach my $c (@vbutt)
+	{
+		if ($skip){
+			$skip--;
+		}else{
+			$vbox->remove($c);
+		}
+	}
+
+	my $button;
+	foreach my $c (@chan)
+	{
+		$button = Gtk2::Button->new($c);
+		$button->signal_connect(clicked => \&switch_channel, $window);
+		$vbox->add($button);
+		$button->show;
+	}
+}
+
+sub proginfo
+{
+	# /cgi-bin/channelinfo
+	#print "proginfo\n";
+	my $s = Net::HTTP->new(Host => $DREAM_BOX_IP) || die $@;
+	$s->write_request(GET => "/cgi-bin/channelinfo");
+	my $l="";
+	while (1) {
+		my $buf;
+		my $n = $s->read_entity_body($buf, 1024);
+		die "read failed: $!" unless defined $n;
+		last unless $n;
+		$l .= $buf;
+	}
+
+	my $station;
+	my @timing;
+	my @event;
+	my @description;
+
+	($station) = ( $l =~ m{<th colspan="3">([^<]*)</th>}g );
+	@timing = ( $l =~ m{<td><span class="time">([0-9]{2}:[0-9]{2})<\/span><\/td>}g );
+	@event = ( $l =~ m{<span class="event">([^<]*)<\/span>}g );
+	@description = ( $l =~ m{<span class="description">([^<]*)<\/span>}g );
+
+	print "$station\n";
+	print "@timing\n";
+	print "@event\n";
+	print "@description\n";
 }
 
 # key press event
@@ -31,22 +120,25 @@ sub keyp{
 	# cursor keys
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{Up})
 	{
+		# /cgi-bin/zapTo?path="+xy+"&curBouquet="+bouquet+"&curChannel="+channel
 		print"up\n";
 	}
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{Down})
 	{
+		# /cgi-bin/zapTo?path="+xy+"&curBouquet="+bouquet+"&curChannel="+channel
 		print"down\n";
 	}
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{Right})
 	{
+		# /setVolume?volume=
 	}
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{Left})
 	{
+		# /setVolume?volume=
 	}
-
-	# space leaves a mark behind
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{space})
 	{
+		# /setVolume?mute=
 	}
 
 	# quit on q
@@ -62,18 +154,28 @@ sub gtk2_bringup
 {
 	Gtk2->init;
 
-	my $window = new Gtk2::Window( 'toplevel' );
+	$window = new Gtk2::Window( 'toplevel' );
 	$window->signal_connect(delete_event => \&gtk2_delete_event);
 	$window->signal_connect(destroy => \&gtk2_destroy);
 	$window->set_default_size (496, 496);
 	$window->set_title(" -=#[ get a 1st life ]#=- ");
 	$window->set_border_width(8);
+
+	$vbox = Gtk2::VBox->new(FALSE, 0);
+	$window->add($vbox);
+
+	my $hbox = Gtk2::HBox->new(FALSE, 0);
+	$vbox->add($hbox);
+
 	my $button;
 	$button = Gtk2::Button->new("Senderliste");
-	$button->signal_connect(clicked => \&senderliste, $window);
-	$window->add($button);
-	$button->show;
+	$button->signal_connect(clicked => \&channel_list, $window);
+	$hbox->add($button);
+	$button = Gtk2::Button->new("Info");
+	$button->signal_connect(clicked => \&proginfo, $window);
+	$hbox->add($button);
 
+	channel_list;
 
 	$window->signal_connect('key-press-event' , sub {keyp @_;});
 	$window->show_all();
@@ -86,6 +188,5 @@ sub main
 }
 
 main;
-
 0;
 
