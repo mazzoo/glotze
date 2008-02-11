@@ -1,2 +1,91 @@
 #!/usr/bin/perl
 
+use strict;
+
+#use constant TRUE  => 1;
+#use constant FALSE => 0;
+
+# Gtk stuff
+use Glib qw/TRUE FALSE/;
+use Gtk2;
+
+sub gtk2_delete_event
+{
+	return FALSE;
+}
+sub gtk2_destroy
+{
+	Gtk2->main_quit;
+}
+
+sub senderliste
+{
+	print "Senderliste\n";
+}
+
+# key press event
+use Gtk2::Gdk::Keysyms;
+sub keyp{
+	my ($wid, $event) = @_;
+	
+	# cursor keys
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{Up})
+	{
+		print"up\n";
+	}
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{Down})
+	{
+		print"down\n";
+	}
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{Right})
+	{
+	}
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{Left})
+	{
+	}
+
+	# space leaves a mark behind
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{space})
+	{
+	}
+
+	# quit on q
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{q})
+	{
+		exit(0);
+	}
+
+	0;
+}
+
+sub gtk2_bringup
+{
+	Gtk2->init;
+
+	my $window = new Gtk2::Window( 'toplevel' );
+	$window->signal_connect(delete_event => \&gtk2_delete_event);
+	$window->signal_connect(destroy => \&gtk2_destroy);
+	$window->set_default_size (496, 496);
+	$window->set_title(" -=#[ get a 1st life ]#=- ");
+	$window->set_border_width(8);
+	my $button;
+	$button = Gtk2::Button->new("Senderliste");
+	$button->signal_connect(clicked => \&senderliste, $window);
+	$window->add($button);
+	$button->show;
+
+
+	$window->signal_connect('key-press-event' , sub {keyp @_;});
+	$window->show_all();
+}
+
+sub main
+{
+	gtk2_bringup;
+	Gtk2->main;
+}
+
+main;
+
+0;
+
