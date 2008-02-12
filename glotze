@@ -175,7 +175,6 @@ sub gtk2_bringup
 	$window = new Gtk2::Window( 'toplevel' );
 	$window->signal_connect(delete_event => \&gtk2_delete_event);
 	$window->signal_connect(destroy => \&gtk2_destroy);
-	$window->set_default_size (496, 496);
 	$window->set_title(" -=#[ get a 1st life ]#=- ");
 	$window->set_border_width(8);
 
@@ -205,16 +204,12 @@ sub vlc_bringup
 	if (!$vlc_pid){
 		my @cmd=split(" ", "$VLC_BIN $VLC_ARGS http://$DREAMBOX_IP/video.m3u");
 
-		#system("@cmd &> /dev/null");
-#		exec("@cmd &> /dev/null");
 		exec(@cmd);
 		exit 23;
 	}
 
 	while (undef == ($vlc = IO::Socket::INET->new(PeerAddr => $remote_control_port)))
 		{ sleep 1; }
-	print "vlc=$vlc\n";
-	print "pid=$vlc_pid\n";
 }
 
 sub main
