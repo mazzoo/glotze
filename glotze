@@ -205,7 +205,9 @@ sub vlc_bringup
 	if (!$vlc_pid){
 		my @cmd=split(" ", "$VLC_BIN $VLC_ARGS http://$DREAMBOX_IP/video.m3u");
 
-		system("@cmd &> /dev/null");
+		#system("@cmd &> /dev/null");
+#		exec("@cmd &> /dev/null");
+		exec(@cmd);
 		exit 23;
 	}
 
