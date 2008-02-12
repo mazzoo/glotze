@@ -6,11 +6,17 @@ use utf8;
 use Glib qw/TRUE FALSE/;
 use Gtk2;
 use Net::HTTP;
+use IPC::Open3;
+use File::Spec;
+use Symbol qw(gensym);
 
-my $DREAM_BOX_IP="192.168.1.8";
+my $DREAMBOX_IP="192.168.1.8";
+my $remote_control_port="127.0.0.1:9645";
 
 my $VLC_BIN="/usr/bin/vlc";
-my $VLC_ARGS="--verbose 0";
+my $VLC_ARGS="--verbose 0 --rc-host $remote_control_port";
+my $vlc; # tcp socket to rc vlc console
+my $vlc_pid;
 
 my $window;
 my $vbox;
@@ -26,15 +32,23 @@ sub gtk2_destroy
 
 sub switch_channel
 {
-	my (%h, @rest) = @_;
-	print %h ."\n";
+	# /cgi-bin/zapTo?path=$channel&curBouquet=0&curChannel=1
+	# /cgi-bin/zapTo?path=$channel&curBouquet=0
+	my ($button, $channel) = @_;
+	my $s = Net::HTTP->new(Host => $DREAMBOX_IP) || die $@;
+	$s->write_request(GET => "/cgi-bin/zapTo?path=$channel&curBouquet=0");
+#	print $channel ."\n";
+
+	sleep 1;
+	print $vlc "add http://$DREAMBOX_IP/video.m3u\n";
+	print "add http://$DREAMBOX_IP/video.m3u\n";
 }
 
 sub channel_list
 {
 	# /body
 	#print "senderliste\n";
-	my $s = Net::HTTP->new(Host => $DREAM_BOX_IP) || die $@;
+	my $s = Net::HTTP->new(Host => $DREAMBOX_IP) || die $@;
 	$s->write_request(GET => "/body");
 	my $l="";
 	while (1) {
@@ -72,12 +86,14 @@ sub channel_list
 	}
 
 	my $button;
+	my $i=0;
 	foreach my $c (@chan)
 	{
 		$button = Gtk2::Button->new($c);
-		$button->signal_connect(clicked => \&switch_channel, $window);
+		$button->signal_connect(clicked => \&switch_channel, $chan_ref[$i]);
 		$vbox->add($button);
 		$button->show;
+		$i++;
 	}
 }
 
@@ -85,7 +101,7 @@ sub proginfo
 {
 	# /cgi-bin/channelinfo
 	#print "proginfo\n";
-	my $s = Net::HTTP->new(Host => $DREAM_BOX_IP) || die $@;
+	my $s = Net::HTTP->new(Host => $DREAMBOX_IP) || die $@;
 	$s->write_request(GET => "/cgi-bin/channelinfo");
 	my $l="";
 	while (1) {
@@ -181,9 +197,25 @@ sub gtk2_bringup
 	$window->show_all();
 }
 
+sub vlc_bringup
+{
+	$vlc_pid = fork;
+	if (!$vlc_pid){
+		my @cmd=split(" ", "$VLC_BIN $VLC_ARGS http://$DREAMBOX_IP/video.m3u &");
+
+		system(@cmd);
+		exit 23;
+	}
+
+	while (undef == ($vlc = IO::Socket::INET->new(PeerAddr => $remote_control_port)))
+		{ sleep 1; }
+	print "vlc=$vlc\n";
+}
+
 sub main
 {
 	gtk2_bringup;
+	vlc_bringup;
 	Gtk2->main;
 }
 
