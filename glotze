@@ -23,10 +23,12 @@ my $vbox;
 
 sub gtk2_delete_event
 {
+	kill 9, $vlc_pid;
 	return FALSE;
 }
 sub gtk2_destroy
 {
+	kill 9, $vlc_pid;
 	Gtk2->main_quit;
 }
 
@@ -41,7 +43,6 @@ sub switch_channel
 
 	sleep 1;
 	print $vlc "add http://$DREAMBOX_IP/video.m3u\n";
-	print "add http://$DREAMBOX_IP/video.m3u\n";
 }
 
 sub channel_list
@@ -160,6 +161,7 @@ sub keyp{
 	# quit on q
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{q})
 	{
+		kill 9, $vlc_pid;
 		exit(0);
 	}
 
@@ -201,15 +203,16 @@ sub vlc_bringup
 {
 	$vlc_pid = fork;
 	if (!$vlc_pid){
-		my @cmd=split(" ", "$VLC_BIN $VLC_ARGS http://$DREAMBOX_IP/video.m3u &");
+		my @cmd=split(" ", "$VLC_BIN $VLC_ARGS http://$DREAMBOX_IP/video.m3u");
 
-		system(@cmd);
+		system("@cmd &> /dev/null");
 		exit 23;
 	}
 
 	while (undef == ($vlc = IO::Socket::INET->new(PeerAddr => $remote_control_port)))
 		{ sleep 1; }
 	print "vlc=$vlc\n";
+	print "pid=$vlc_pid\n";
 }
 
 sub main
