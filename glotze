@@ -161,6 +161,12 @@ sub keyp{
 		# /setVolume?mute=
 	}
 
+	# toggle fullscreen on f
+	if ($event->keyval == $Gtk2::Gdk::Keysyms{f})
+	{
+		print $vlc "fullscreen\n";
+	}
+
 	# quit on q
 	if ($event->keyval == $Gtk2::Gdk::Keysyms{q})
 	{
