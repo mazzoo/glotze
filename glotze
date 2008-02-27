@@ -32,20 +32,6 @@ sub gtk2_destroy
 	Gtk2->main_quit;
 }
 
-sub switch_channel
-{
-	# /cgi-bin/zapTo?path=$channel&curBouquet=0&curChannel=1
-	# /cgi-bin/zapTo?path=$channel&curBouquet=0
-	my ($button, $channel) = @_;
-	my $s = Net::HTTP->new(Host => $DREAMBOX_IP) || die $@;
-	$s->write_request(GET => "/cgi-bin/zapTo?path=$channel&curBouquet=0");
-#	print $channel ."\n";
-
-	sleep 1;
-	print $vlc "add http://$DREAMBOX_IP/video.m3u\n";
-	channel_list;
-}
-
 sub channel_list
 {
 	# /body
@@ -97,6 +83,20 @@ sub channel_list
 		$button->show;
 		$i++;
 	}
+}
+
+sub switch_channel
+{
+	# /cgi-bin/zapTo?path=$channel&curBouquet=0&curChannel=1
+	# /cgi-bin/zapTo?path=$channel&curBouquet=0
+	my ($button, $channel) = @_;
+	my $s = Net::HTTP->new(Host => $DREAMBOX_IP) || die $@;
+	$s->write_request(GET => "/cgi-bin/zapTo?path=$channel&curBouquet=0");
+#	print $channel ."\n";
+
+	sleep 1;
+	print $vlc "add http://$DREAMBOX_IP/video.m3u\n";
+	channel_list;
 }
 
 sub proginfo
