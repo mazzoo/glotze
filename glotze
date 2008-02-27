@@ -43,6 +43,7 @@ sub switch_channel
 
 	sleep 1;
 	print $vlc "add http://$DREAMBOX_IP/video.m3u\n";
+	channel_list;
 }
 
 sub channel_list
