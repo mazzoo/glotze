@@ -78,7 +78,7 @@ sub channel_list
 	foreach my $c (@chan)
 	{
 		utf8::decode($c);
-		print "$c\n";
+
 		$button = Gtk2::Button->new($c);
 		$button->signal_connect(clicked => \&switch_channel, $chan_ref[$i]);
 		$vbox->add($button);
