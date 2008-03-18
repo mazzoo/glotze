@@ -127,9 +127,9 @@ sub proginfo
 	@description = ( $l =~ m{<span class="description">([^<]*)<\/span>}g );
 
 	print "$station\n";
-	print "@timing\n";
-	print "@event\n";
-	print "@description\n";
+	print join("  |||  ", @timing) . "\n";
+	print join("  |||  ", @event) . "\n";
+	print join("  |||  ", @description) . "\n";
 }
 
 # key press event
@@ -167,8 +167,9 @@ sub keyp{
 		print $vlc "fullscreen\n";
 	}
 
-	# quit on q
-	if ($event->keyval == $Gtk2::Gdk::Keysyms{q})
+	# quit on q or s
+	if (($event->keyval == $Gtk2::Gdk::Keysyms{q}) ||
+	    ($event->keyval == $Gtk2::Gdk::Keysyms{s}) )
 	{
 		kill 9, $vlc_pid;
 		exit(0);
