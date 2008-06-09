@@ -13,6 +13,10 @@ use Symbol qw(gensym);
 my $DREAMBOX_IP="192.168.1.8";
 my $remote_control_port="127.0.0.1:9645";
 
+# in vlc, ubuntu-users and others must enable
+# "Remote control interface"
+# under Settings->Preferences ,  Interface->Main Interfaces
+
 my $VLC_BIN="/usr/bin/vlc";
 my $VLC_ARGS="--verbose 0 --rc-host $remote_control_port";
 my $vlc; # tcp socket to rc vlc console
